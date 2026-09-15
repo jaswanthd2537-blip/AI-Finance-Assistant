@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% block content %}
+<h1>Dashboard</h1>
+<div class="grid three"><div class="stat"><small>Total Income</small><b>₹{{"%.2f"|format(income)}}</b></div><div class="stat"><small>Total Expenses</small><b>₹{{"%.2f"|format(expense)}}</b></div><div class="stat"><small>Balance</small><b>₹{{"%.2f"|format(balance)}}</b></div></div>
+<div class="grid two">
+<section class="card"><h2>Add Transaction</h2>
+<form method="post" action="/transactions/add">
+<input type="date" name="date" required><input name="description" placeholder="e.g. swiggy dinner 450" required>
+<input name="amount" type="number" min="0.01" step="0.01" placeholder="Amount" required>
+<select name="type" id="type"><option value="expense">Expense</option><option value="income">Income</option></select>
+<select name="category"><option>Auto</option>{% for c in categories %}<option>{{c}}</option>{% endfor %}</select>
+<button class="btn">Add Transaction</button></form>
+</section>
+<section class="card"><h2>AI Insights</h2><div id="insights">Loading…</div></section>
+</div>
+<div class="grid two">
+<section class="card"><h2>Spending by Category</h2><canvas id="chart"></canvas></section>
+<section class="card"><h2>Set Monthly Budget</h2>
+<form method="post" action="/budgets/add"><input type="month" name="month" required><select name="category">{% for c in categories %}<option>{{c}}</option>{% endfor %}</select><input name="limit" type="number" min="1" step=".01" placeholder="Limit" required><button class="btn">Save Budget</button></form>
+<h3>Current budgets</h3>{% for b in budgets %}<p><b>{{b['month']}}</b> · {{b['category']}} · ₹{{"%.2f"|format(b['limit_amount'])}}</p>{% else %}<p>No budgets yet.</p>{% endfor %}
+</section></div>
+<section class="card"><h2>Transactions</h2><div class="table-wrap"><table><tr><th>Date</th><th>Description</th><th>Type</th><th>Category</th><th>Amount</th><th></th></tr>
+{% for t in transactions %}<tr><td>{{t['date']}}</td><td>{{t['description']}}</td><td>{{t['type']}}</td><td>{{t['category']}}</td><td>₹{{"%.2f"|format(t['amount'])}}</td><td><form method="post" action="/transactions/delete/{{t['id']}}"><button class="delete">Delete</button></form></td></tr>{% else %}<tr><td colspan="6">No transactions yet.</td></tr>{% endfor %}</table></div></section>
+<script>
+fetch("/api/insights").then(r=>r.json()).then(d=>document.getElementById("insights").innerHTML=d.insights.map(x=>"<p>💡 "+x+"</p>").join(""));
+new Chart(document.getElementById("chart"),{type:"doughnut",data:{labels:{{cats|map(attribute='category')|list|tojson}},datasets:[{data:{{cats|map(attribute='total')|list|tojson}}}]},options:{responsive:true}});
+</script>
+{% endblock %}
